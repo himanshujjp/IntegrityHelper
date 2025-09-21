@@ -15,7 +15,10 @@ jobs:
 
     - name: Create ZIP archive
       run: |
-        zip -r IntegrityHelper.zip . -x "*.git*" "*.DS_Store" "*__pycache__*" "*.pyc"
+        VERSION=${{ github.ref_name }}
+        ZIP_NAME="IntegrityHelper-${VERSION}.zip"
+        echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+        zip -r "$ZIP_NAME" . -x "*.git*" "*.DS_Store" "*__pycache__*" "*.pyc"
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -34,7 +37,7 @@ jobs:
           - Automatic root solution detection
 
           ## 🚀 Installation
-          1. Download `IntegrityHelper.zip`
+          1. Download `IntegrityHelper-${{ github.ref_name }}.zip`
           2. Flash via Magisk Manager/APatch/KernelSU
           3. Reboot device
           4. Access UI at http://127.0.0.1:8585
@@ -43,4 +46,4 @@ jobs:
           Use at your own risk. Always backup before installing third-party modules.
         draft: false
         prerelease: false
-        files: IntegrityHelper.zip
+        files: ${{ env.ZIP_NAME }}
