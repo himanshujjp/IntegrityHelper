@@ -1,0 +1,22 @@
+#!/system/bin/sh
+# api_test.sh - CGI API endpoint for testing
+
+echo "Content-Type: text/plain"
+echo "Access-Control-Allow-Origin: *"
+echo "Access-Control-Allow-Headers: *"
+echo "Access-Control-Allow-Methods: GET, POST, OPTIONS"
+echo ""
+echo "API Server Test: $(date)"
+echo "PID: $$"
+echo "Working Directory: $(pwd)"
+echo "Script: $0"
+echo "Request Method: $REQUEST_METHOD"
+echo "Query String: $QUERY_STRING"
+echo "Content Length: $CONTENT_LENGTH"
+echo "Content Type: $CONTENT_TYPE"
+echo "Server: busybox httpd CGI"
+echo "Path Info: $PATH_INFO"
+echo "Script Name: $SCRIPT_NAME"
+echo "Server Name: $SERVER_NAME"
+echo "Server Port: $SERVER_PORT"
+echo "Remote Addr: $REMOTE_ADDR"

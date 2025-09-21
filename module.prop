@@ -1,0 +1,10 @@
+id=IntegrityHelper
+name=Integrity Helper
+version=v1.0
+versionCode=1
+author=himanshujjp
+description=Universal web-based UI to manage and install integrity-related Magisk modules. Supports Magisk, APatch, and KernelSU with automatic detection.
+minApi=21
+maxApi=35
+needRamdisk=false
+changeBootConfig=false

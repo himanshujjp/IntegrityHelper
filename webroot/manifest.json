@@ -1,0 +1,37 @@
+[
+  {
+    "name": "PlayIntegrityFork",
+    "repo": "https://github.com/osm0sis/PlayIntegrityFork",
+    "description": "Play Integrity Fork module for Magisk",
+    "author": "osm0sis",
+    "license": "GPL-3.0"
+  },
+  {
+    "name": "TrickyStore",
+    "repo": "https://github.com/5ec1cff/TrickyStore",
+    "description": "Tricky Store module for bypassing Play Store restrictions",
+    "author": "5ec1cff",
+    "license": "GPL-3.0"
+  },
+  {
+    "name": "PlayStoreSelfUpdateBlocker",
+    "repo": "https://github.com/himanshujjp/PlayStoreSelfUpdateBlocker",
+    "description": "Blocks Play Store self-updates",
+    "author": "himanshujjp",
+    "license": "MIT"
+  },
+  {
+    "name": "yurikey",
+    "repo": "https://github.com/YurikeyDev/yurikey",
+    "description": "Yuri Key module for integrity",
+    "author": "YurikeyDev",
+    "license": "GPL-3.0"
+  },
+  {
+    "name": "ZygiskNext",
+    "repo": "https://github.com/Dr-TSNG/ZygiskNext",
+    "description": "Zygisk Next for Magisk",
+    "author": "Dr-TSNG",
+    "license": "GPL-3.0"
+  }
+]

@@ -1,0 +1,53 @@
+#!/sbin/sh
+# Universal update-binary for Magisk, APatch, KernelSU
+# This script is executed during module installation
+
+OUTFD=$2
+ZIPFILE=$3
+
+ui_print() {
+  echo -e "ui_print $1\nui_print" >> /proc/self/fd/$OUTFD
+}
+
+cd /tmp
+unzip -o "$ZIPFILE"
+
+if [ -f "install.sh" ]; then
+  chmod +x install.sh
+  . ./install.sh
+fi
+
+# Detect root solution
+if [ -d "/data/adb/ksu" ]; then
+    ROOT_TYPE="kernelsu"
+    MODULES_DIR="/data/adb/ksu/modules"
+elif [ -d "/data/adb/apatch" ] || [ -d "/data/adb/ap" ]; then
+    ROOT_TYPE="apatch"
+    MODULES_DIR="/data/adb/modules"
+else
+    ROOT_TYPE="magisk"
+    MODULES_DIR="/data/adb/modules"
+fi
+
+ui_print "Detected root type: $ROOT_TYPE"
+
+# Copy module files
+mkdir -p "$MODULES_DIR/IntegrityHelper"
+cp -rf * "$MODULES_DIR/IntegrityHelper/" 2>/dev/null
+rm -rf "$MODULES_DIR/IntegrityHelper/META-INF"
+
+# For APatch, copy post-fs-data.sh to post-fs-data.d
+if [ "$ROOT_TYPE" = "apatch" ]; then
+    mkdir -p /data/adb/apatch/post-fs-data.d
+    cp "$MODULES_DIR/IntegrityHelper/post-fs-data.sh" /data/adb/apatch/post-fs-data.d/IntegrityHelper.sh
+    chmod 755 /data/adb/apatch/post-fs-data.d/IntegrityHelper.sh
+fi
+
+# Set permissions
+chmod 755 "$MODULES_DIR/IntegrityHelper/post-fs-data.sh"
+chmod 755 "$MODULES_DIR/IntegrityHelper/service.sh"
+chmod 755 "$MODULES_DIR/IntegrityHelper/open_ui.sh"
+chmod 755 "$MODULES_DIR/IntegrityHelper/scripts/*"
+
+ui_print "IntegrityHelper module installed successfully!"
+ui_print "Reboot to start the web UI."
