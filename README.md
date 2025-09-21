@@ -144,7 +144,7 @@ ps | grep httpd
 cat /data/adb/IntegrityHelper/service.log
 
 # Test API endpoints
-curl http://127.0.0.1:8585/api_test.sh
+curl http://127.0.0.1:8585/cgi-bin/api_test.sh
 
 # Check module status
 ls -la /data/adb/modules/IntegrityHelper/
@@ -163,12 +163,14 @@ IntegrityHelper/
 │   ├── script.js                             # Frontend logic
 │   ├── manifest.json                         # Module list
 │   ├── httpd.conf                            # Server config
-│   └── api_*.sh                              # CGI endpoints
+│   └── cgi-bin/                              # CGI scripts
+│       ├── api_download.sh                   # Download endpoint
+│       ├── api_install.sh                    # Install endpoint
+│       ├── api_install_all.sh                # Batch install endpoint
+│       ├── api_state.sh                      # State endpoint
+│       └── api_test.sh                       # Test endpoint
 └── scripts/                                   # Backend scripts
-    ├── api_server.sh
-    ├── download.sh
-    ├── get_state.sh
-    └── handle_request.sh
+    └── httpd.conf                            # Alternative config
 ```
 
 ## 📋 Changelog

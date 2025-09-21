@@ -19,7 +19,7 @@ async function checkAPIServer() {
     container.insertBefore(statusIndicator, container.firstChild);
 
     try {
-        const response = await fetch('http://127.0.0.1:8585/api_test.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_test.sh', {
             method: 'GET',
             signal: AbortSignal.timeout(5000)
         });
@@ -46,7 +46,7 @@ async function loadModules() {
     // Load state
     let state = {};
     try {
-        const stateResponse = await fetch('http://127.0.0.1:8585/api_state.sh');
+        const stateResponse = await fetch('http://127.0.0.1:8585/cgi-bin/api_state.sh');
         state = await stateResponse.json();
     } catch (e) {
         console.log('No state file yet');
@@ -130,7 +130,7 @@ async function downloadModule(name, repo, event) {
         formData.append('name', name);
         formData.append('repo', repo);
 
-        const response = await fetch('http://127.0.0.1:8585/api_download.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_download.sh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -168,7 +168,7 @@ async function installModule(name, event) {
         const formData = new URLSearchParams();
         formData.append('name', name);
 
-        const response = await fetch('http://127.0.0.1:8585/api_install.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_install.sh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -203,7 +203,7 @@ async function installAllModules() {
     statusText.textContent = 'Installing all modules...';
 
     try {
-        const response = await fetch('http://127.0.0.1:8585/api_install_all.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_install_all.sh', {
             method: 'POST'
         });
 
@@ -234,7 +234,7 @@ async function testCGI() {
     statusText.textContent = 'Testing API server...';
 
     try {
-        const response = await fetch('http://127.0.0.1:8585/api_test.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_test.sh', {
             method: 'GET'
         });
 
