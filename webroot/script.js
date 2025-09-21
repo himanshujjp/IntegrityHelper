@@ -84,8 +84,28 @@ function createModuleCard(module, releaseInfo, installedVersion) {
     const card = document.createElement('div');
     card.className = 'col-md-6 mb-4';
 
-    const isInstalled = installedVersion && releaseInfo && installedVersion === releaseInfo.tag_name;
-    const status = isInstalled ? 'Installed' : 'Not Installed';
+    // Normalize versions for comparison
+    const normalizeVersion = (version) => {
+        if (!version) return null;
+        return version.replace(/^v/, '').trim();
+    };
+
+    const normalizedInstalled = normalizeVersion(installedVersion);
+    const normalizedLatest = releaseInfo ? normalizeVersion(releaseInfo.tag_name) : null;
+
+    const isInstalled = normalizedInstalled && normalizedLatest && normalizedInstalled === normalizedLatest;
+    const isOutdated = normalizedInstalled && normalizedLatest && normalizedInstalled !== normalizedLatest;
+
+    let status = 'Not Installed';
+    let statusClass = 'text-warning';
+
+    if (isInstalled) {
+        status = `Installed (${installedVersion})`;
+        statusClass = 'text-success';
+    } else if (installedVersion) {
+        status = `Installed (${installedVersion}) - ${isOutdated ? 'Update Available' : 'Unknown Version'}`;
+        statusClass = isOutdated ? 'text-info' : 'text-secondary';
+    }
 
     card.innerHTML = `
         <div class="card">
@@ -97,7 +117,7 @@ function createModuleCard(module, releaseInfo, installedVersion) {
                 ${releaseInfo ? `
                     <p>Latest: ${releaseInfo.tag_name} (${new Date(releaseInfo.published_at).toLocaleDateString()})</p>
                 ` : '<p>Unable to fetch latest release</p>'}
-                <p>Status: <span class="${isInstalled ? 'text-success' : 'text-warning'}">${status}</span></p>
+                <p>Status: <span class="${statusClass}">${status}</span></p>
                 <div class="btn-group">
                     <button class="btn btn-outline-primary btn-sm download-btn" data-repo="${module.repo}" data-name="${module.name}">Download</button>
                     <button class="btn btn-outline-success btn-sm install-btn" data-name="${module.name}" ${isInstalled ? 'disabled' : ''}>Install</button>
@@ -165,6 +185,15 @@ async function installModule(name, event) {
     statusText.textContent = `Installing ${name}...`;
 
     try {
+        // First check if we need to download
+        const modules = await (await fetch('manifest.json')).json();
+        const module = modules.find(m => m.name === name);
+
+        if (!module) {
+            throw new Error('Module not found in manifest');
+        }
+
+        // Check if ZIP exists by trying to install first
         const formData = new URLSearchParams();
         formData.append('name', name);
 
@@ -181,7 +210,32 @@ async function installModule(name, event) {
         }
 
         const result = await response.text();
-        statusText.textContent = result;
+
+        // If installation failed due to missing ZIP, download first
+        if (result.includes('Zip file not found')) {
+            statusText.textContent = `Downloading ${name} first...`;
+            await downloadModule(name, module.repo, { target: { disabled: false, textContent: 'Download' } });
+            statusText.textContent = `Installing ${name}...`;
+
+            // Now try install again
+            const retryResponse = await fetch('http://127.0.0.1:8585/cgi-bin/api_install.sh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            });
+
+            if (!retryResponse.ok) {
+                throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText}`);
+            }
+
+            const retryResult = await retryResponse.text();
+            statusText.textContent = retryResult;
+        } else {
+            statusText.textContent = result;
+        }
+
         loadModules(); // Refresh
     } catch (e) {
         statusText.textContent = 'Install failed: ' + e.message;
