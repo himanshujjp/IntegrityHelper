@@ -18,7 +18,7 @@ jobs:
         zip -r IntegrityHelper.zip . -x "*.git*" "*.DS_Store" "*__pycache__*" "*.pyc"
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         name: Integrity Helper ${{ github.ref_name }}
         tag_name: ${{ github.ref_name }}
@@ -43,5 +43,4 @@ jobs:
           Use at your own risk. Always backup before installing third-party modules.
         draft: false
         prerelease: false
-        files: |
-          IntegrityHelper.zip
+        files: IntegrityHelper.zip
