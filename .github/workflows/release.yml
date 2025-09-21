@@ -1,0 +1,49 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create ZIP archive
+      run: |
+        zip -r IntegrityHelper.zip . -x "*.git*" "*.DS_Store" "*__pycache__*" "*.pyc"
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Integrity Helper ${{ github.ref_name }}
+        body: |
+          # Integrity Helper ${{ github.ref_name }}
+
+          Universal web-based UI to manage and install integrity-related Magisk modules.
+
+          ## 📦 What's Included
+          - Complete Magisk module with web interface
+          - CGI scripts for API endpoints
+          - Bootstrap-styled responsive UI
+          - Automatic root solution detection
+
+          ## 🚀 Installation
+          1. Download `IntegrityHelper.zip`
+          2. Flash via Magisk Manager/APatch/KernelSU
+          3. Reboot device
+          4. Access UI at http://127.0.0.1:8585
+
+          ## ⚠️ Important
+          Use at your own risk. Always backup before installing third-party modules.
+        draft: false
+        prerelease: false
+        assets: |
+          IntegrityHelper.zip
