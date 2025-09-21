@@ -18,12 +18,10 @@ jobs:
         zip -r IntegrityHelper.zip . -x "*.git*" "*.DS_Store" "*__pycache__*" "*.pyc"
 
     - name: Create Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
+        name: Integrity Helper ${{ github.ref_name }}
         tag_name: ${{ github.ref_name }}
-        release_name: Integrity Helper ${{ github.ref_name }}
         body: |
           # Integrity Helper ${{ github.ref_name }}
 
@@ -45,5 +43,5 @@ jobs:
           Use at your own risk. Always backup before installing third-party modules.
         draft: false
         prerelease: false
-        assets: |
+        files: |
           IntegrityHelper.zip
