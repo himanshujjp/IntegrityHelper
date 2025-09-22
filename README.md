@@ -81,18 +81,23 @@ sh /data/adb/ksu/modules/IntegrityHelper/open_ui.sh
 
 1. **Access the Web UI** at `http://127.0.0.1:8585`
 2. **View Module Status**: See all required modules with their current installation status
-3. **Download Modules**: Click "Download" to fetch the latest release for a specific module
-4. **Install Modules**: Click "Install" to install the downloaded module
-5. **Batch Install**: Use "Install All" to download and install all modules at once
-6. **View Repositories**: Click "Open Repo" to view the module's GitHub page
+3. **Install Modules**: Click "Install" to automatically download and flash modules through your root manager
+4. **Update Modules**: Click "Update" when a newer version is available
+5. **Reboot Device**: May be required for modules to become active
+6. **Batch Process**: Use "Install All" to process all modules at once
+7. **View Repositories**: Click "Open Repo" to view the module's GitHub page
+
+### ⚠️ Important Workflow:
+- **Install/Update** → **Reboot** (if required)
 
 ### UI Features
 
 - 🔄 **Real-time Status**: Shows installed versions vs latest available
-- 📥 **One-click Download**: Downloads latest releases automatically
+- 📥 **One-click Install/Update**: Downloads and flashes latest releases automatically
 - ⚙️ **Smart Installation**: Handles permissions and dependencies
 - 📊 **Progress Tracking**: Visual feedback during operations
 - 🔍 **Repository Links**: Direct access to source code
+- 🔄 **Update Detection**: Shows "Update" button only when newer versions are available
 
 ## 🔧 Technical Details
 
@@ -118,9 +123,16 @@ sh /data/adb/ksu/modules/IntegrityHelper/open_ui.sh
 
 ### What this tool does:
 - ✅ Downloads from official GitHub repositories only
-- ✅ Verifies module integrity during installation
-- ✅ Provides clear version tracking
-- ✅ Offers easy uninstallation options
+- ✅ Verifies module integrity during download
+- ✅ **Automatically flashes modules through your root manager using proper commands:**
+  - **Magisk**: `magisk --install-module <zip_path>`
+  - **KernelSU**: `ksud module install <zip_path>`
+  - **APatch**: `apd module install <zip_path>`
+- ✅ Provides clear version tracking and status
+- ✅ Offers easy access to module repositories
+
+### What you need to do:
+- � **Reboot your device** if prompted for changes to take effect
 
 ## 🐛 Troubleshooting
 
@@ -184,6 +196,9 @@ IntegrityHelper/
 - 🔒 CORS-enabled API endpoints
 - 📊 Persistent state tracking
 - 🔧 Universal root solution support (Magisk/APatch/KernelSU)
+- 🚀 **Proper module flashing using root manager commands (not file copying)**
+- 🔄 **Smart Update buttons that only appear when updates are available**
+- 📱 **Simplified UI workflow - Install/Update/Reboot**
 
 ## 🤝 Contributing
 

@@ -11,10 +11,19 @@
         <h1 class="text-center mb-4">Integrity Helper</h1>
         <p class="text-center text-muted">Manage your integrity-related Magisk modules</p>
         <div class="alert alert-warning">
-            <strong>Disclaimer:</strong> This tool downloads and installs modules from their official repositories. Use at your own risk.
+            <strong>Important:</strong> This tool automatically downloads and flashes modules through your root manager (Magisk/KernelSU/APatch). A reboot may be required for changes to take effect.
+        </div>
+        <div class="alert alert-info">
+            <strong>How it works:</strong>
+            <ol>
+                <li>Click "Install" to automatically download and flash the module</li>
+                <li>If an update is available, click "Update" to get the latest version</li>
+                <li>Click "Install All" to install/update all modules at once</li>
+                <li>Reboot your device for changes to take effect</li>
+            </ol>
         </div>
         <div class="d-flex justify-content-center mb-4 gap-2">
-            <button id="installAllBtn" class="btn btn-primary btn-lg">Install All Modules</button>
+            <button id="installAllBtn" class="btn btn-primary btn-lg">Install All</button>
             <button id="testBtn" class="btn btn-secondary btn-lg">Test API</button>
         </div>
         <div id="statusContainer" class="alert alert-info mb-4" style="display: none;">

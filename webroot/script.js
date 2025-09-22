@@ -119,8 +119,8 @@ function createModuleCard(module, releaseInfo, installedVersion) {
                 ` : '<p>Unable to fetch latest release</p>'}
                 <p>Status: <span class="${statusClass}">${status}</span></p>
                 <div class="btn-group">
-                    <button class="btn btn-outline-primary btn-sm download-btn" data-repo="${module.repo}" data-name="${module.name}">Download</button>
-                    <button class="btn btn-outline-success btn-sm install-btn" data-name="${module.name}" ${isInstalled ? 'disabled' : ''}>Install</button>
+                    ${isOutdated ? `<button class="btn btn-outline-warning btn-sm update-btn" data-name="${module.name}">Update</button>` : ''}
+                    <button class="btn btn-outline-success btn-sm install-btn" data-name="${module.name}" ${installedVersion ? 'disabled' : ''}>Install</button>
                     <button class="btn btn-outline-info btn-sm repo-btn" data-repo="${module.repo}">Open Repo</button>
                 </div>
             </div>
@@ -128,29 +128,30 @@ function createModuleCard(module, releaseInfo, installedVersion) {
     `;
 
     // Add event listeners
-    card.querySelector('.download-btn').addEventListener('click', (e) => downloadModule(module.name, module.repo, e));
+    if (isOutdated) {
+        card.querySelector('.update-btn').addEventListener('click', (e) => updateModule(module.name, e));
+    }
     card.querySelector('.install-btn').addEventListener('click', (e) => installModule(module.name, e));
     card.querySelector('.repo-btn').addEventListener('click', () => window.open(module.repo, '_blank'));
 
     return card;
 }
 
-async function downloadModule(name, repo, event) {
+async function updateModule(name, event) {
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
     const btn = event.target;
     const originalText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Downloading...';
+    btn.textContent = 'Updating...';
     statusContainer.style.display = 'block';
-    statusText.textContent = `Downloading ${name}...`;
+    statusText.textContent = `Updating ${name}...`;
 
     try {
         const formData = new URLSearchParams();
         formData.append('name', name);
-        formData.append('repo', repo);
 
-        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_download.sh', {
+        const response = await fetch('http://127.0.0.1:8585/cgi-bin/api_install.sh', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -166,8 +167,8 @@ async function downloadModule(name, repo, event) {
         statusText.textContent = result;
         loadModules(); // Refresh
     } catch (e) {
-        statusText.textContent = 'Download failed: ' + e.message;
-        console.error('Download error:', e);
+        statusText.textContent = 'Update failed: ' + e.message;
+        console.error('Update error:', e);
     } finally {
         btn.disabled = false;
         btn.textContent = originalText;
@@ -185,15 +186,6 @@ async function installModule(name, event) {
     statusText.textContent = `Installing ${name}...`;
 
     try {
-        // First check if we need to download
-        const modules = await (await fetch('manifest.json')).json();
-        const module = modules.find(m => m.name === name);
-
-        if (!module) {
-            throw new Error('Module not found in manifest');
-        }
-
-        // Check if ZIP exists by trying to install first
         const formData = new URLSearchParams();
         formData.append('name', name);
 
@@ -210,32 +202,7 @@ async function installModule(name, event) {
         }
 
         const result = await response.text();
-
-        // If installation failed due to missing ZIP, download first
-        if (result.includes('Zip file not found')) {
-            statusText.textContent = `Downloading ${name} first...`;
-            await downloadModule(name, module.repo, { target: { disabled: false, textContent: 'Download' } });
-            statusText.textContent = `Installing ${name}...`;
-
-            // Now try install again
-            const retryResponse = await fetch('http://127.0.0.1:8585/cgi-bin/api_install.sh', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: formData.toString()
-            });
-
-            if (!retryResponse.ok) {
-                throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText}`);
-            }
-
-            const retryResult = await retryResponse.text();
-            statusText.textContent = retryResult;
-        } else {
-            statusText.textContent = result;
-        }
-
+        statusText.textContent = result;
         loadModules(); // Refresh
     } catch (e) {
         statusText.textContent = 'Install failed: ' + e.message;
@@ -273,7 +240,7 @@ async function installAllModules() {
         console.error('Install All error:', e);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Install All Modules';
+        btn.textContent = 'Install All';
     }
 }
 

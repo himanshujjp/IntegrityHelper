@@ -35,50 +35,75 @@ fi
 
 echo "DEBUG: Found ZIP file: $ZIP_FILE"
 
-# Determine module directory based on root type
+# Determine module directory based on root type (for version detection only)
 if [ -d "/data/adb/modules" ]; then
     MODULE_DIR="/data/adb/modules"
-    echo "DEBUG: Using Magisk/APatch module directory: $MODULE_DIR"
+    echo "DEBUG: Detected Magisk/APatch root manager"
 elif [ -d "/data/adb/ksu/modules" ]; then
     MODULE_DIR="/data/adb/ksu/modules"
-    echo "DEBUG: Using KernelSU module directory: $MODULE_DIR"
+    echo "DEBUG: Detected KernelSU root manager"
 else
-    echo "Error: No module directory found"
+    echo "Error: No module directory found - cannot determine root manager"
     exit 1
 fi
 
-# Check if module is already installed
-if [ -d "$MODULE_DIR/$NAME" ]; then
-    echo "DEBUG: Module $NAME already exists, removing old version"
-    rm -rf "$MODULE_DIR/$NAME"
-fi
-
-echo "DEBUG: Extracting ZIP to $MODULE_DIR/$NAME"
-
-# Extract zip
-mkdir -p "$MODULE_DIR/$NAME"
-if busybox unzip -q -o "$ZIP_FILE" -d "$MODULE_DIR/$NAME" 2>/dev/null; then
-    echo "DEBUG: ZIP extraction successful"
-
-    # Set permissions
-    chmod -R 755 "$MODULE_DIR/$NAME"
-    find "$MODULE_DIR/$NAME" -name "*.sh" -exec chmod 755 {} \;
-
-    # Read version from module.prop
-    VERSION=""
-    if [ -f "$MODULE_DIR/$NAME/module.prop" ]; then
-        VERSION=$(grep '^version=' "$MODULE_DIR/$NAME/module.prop" | cut -d'=' -f2 | tr -d '\r' | sed 's/^v//' | sed 's/^ *//;s/ *$//')
+# Read version from ZIP file (before flashing)
+VERSION=""
+# Try to extract temporarily to read version
+TEMP_EXTRACT="/data/local/tmp/${NAME}_temp"
+mkdir -p "$TEMP_EXTRACT"
+if busybox unzip -q -o "$ZIP_FILE" -d "$TEMP_EXTRACT" 2>/dev/null; then
+    if [ -f "$TEMP_EXTRACT/module.prop" ]; then
+        VERSION=$(grep '^version=' "$TEMP_EXTRACT/module.prop" | cut -d'=' -f2 | tr -d '\r' | sed 's/^v//' | sed 's/^ *//;s/ *$//')
         echo "DEBUG: Found version in module.prop: '$VERSION'"
     fi
+    rm -rf "$TEMP_EXTRACT"
+fi
 
-    # Fallback to tag name if version not found
-    if [ -z "$VERSION" ]; then
-        # Try to get version from ZIP filename or other sources
-        VERSION="installed"
-        echo "DEBUG: No version found, using 'installed'"
+# Fallback to tag name if version not found
+if [ -z "$VERSION" ]; then
+    VERSION="installed"
+    echo "DEBUG: No version found, using 'installed'"
+fi
+
+# Now actually flash/install the module through root manager
+echo "DEBUG: Flashing module through root manager..."
+
+FLASH_SUCCESS=false
+
+# Try KernelSU first
+if command -v ksud >/dev/null 2>&1; then
+    echo "DEBUG: Using KernelSU to flash module"
+    if ksud module install "$ZIP_FILE"; then
+        echo "DEBUG: KernelSU flashing successful"
+        FLASH_SUCCESS=true
     fi
+fi
 
-    # Update state
+# Try Magisk/APatch if KernelSU failed or not available
+if [ "$FLASH_SUCCESS" = false ] && command -v magisk >/dev/null 2>&1; then
+    echo "DEBUG: Using Magisk/APatch to flash module"
+    if magisk --install-module "$ZIP_FILE" 2>/dev/null; then
+        echo "DEBUG: Magisk/APatch flashing successful"
+        FLASH_SUCCESS=true
+    fi
+fi
+
+# Try APatch if Magisk failed
+if [ "$FLASH_SUCCESS" = false ] && command -v apd >/dev/null 2>&1; then
+    echo "DEBUG: Using APatch to flash module"
+    if apd module install "$ZIP_FILE" 2>/dev/null; then
+        echo "DEBUG: APatch flashing successful"
+        FLASH_SUCCESS=true
+    fi
+fi
+
+# Clean up the ZIP file
+rm -f "$ZIP_FILE"
+echo "DEBUG: Cleaned up ZIP file"
+
+if [ "$FLASH_SUCCESS" = true ]; then
+    # Update state after successful flashing
     STATE_FILE="/data/adb/IntegrityHelper/state.json"
     mkdir -p "/data/adb/IntegrityHelper"
 
@@ -101,12 +126,12 @@ if busybox unzip -q -o "$ZIP_FILE" -d "$MODULE_DIR/$NAME" 2>/dev/null; then
         fi
     fi
 
-    # Clean up
-    rm -f "$ZIP_FILE"
-    echo "DEBUG: Cleaned up ZIP file"
-
-    echo "Successfully installed $NAME (version: $VERSION)"
+    echo "Successfully flashed $NAME (version: $VERSION)"
+    echo "✅ Module has been flashed and is ready to use!"
+    echo "🔄 A reboot may be required for changes to take effect."
 else
-    echo "Error: Failed to extract ZIP file for $NAME"
+    echo "❌ Flashing failed for $NAME"
+    echo "⚠️  Could not flash through root manager"
+    echo "💡 Try flashing manually through your root manager app"
     exit 1
 fi

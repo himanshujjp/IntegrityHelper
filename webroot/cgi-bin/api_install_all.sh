@@ -17,15 +17,6 @@ else
     exit 1
 fi
 
-# List of modules to install (name and repo pairs)
-download_and_install "PlayIntegrityFork" "https://github.com/osm0sis/PlayIntegrityFork"
-download_and_install "TrickyStore" "https://github.com/5ec1cff/TrickyStore"
-download_and_install "PlayStoreSelfUpdateBlocker" "https://github.com/himanshujjp/PlayStoreSelfUpdateBlocker"
-download_and_install "yurikey" "https://github.com/YurikeyDev/yurikey"
-download_and_install "ZygiskNext" "https://github.com/Dr-TSNG/ZygiskNext"
-
-echo "All installations completed"
-
 # Function to download and install a module
 download_and_install() {
     NAME="$1"
@@ -62,29 +53,62 @@ download_and_install() {
     # Now install
     ZIP_FILE="/data/local/tmp/modules/${NAME}.zip"
 
-    # Extract zip
-    mkdir -p "$MODULE_DIR/$NAME"
-    busybox unzip -q -o "$ZIP_FILE" -d "$MODULE_DIR/$NAME" 2>/dev/null
-
-    if [ $? -eq 0 ]; then
-        # Set permissions
-        chmod -R 755 "$MODULE_DIR/$NAME"
-        find "$MODULE_DIR/$NAME" -name "*.sh" -exec chmod 755 {} \;
-
-        # Read version from module.prop
-        VERSION=""
-        if [ -f "$MODULE_DIR/$NAME/module.prop" ]; then
-            VERSION=$(grep '^version=' "$MODULE_DIR/$NAME/module.prop" | cut -d'=' -f2 | tr -d '\r' | sed 's/^v//')
+    # Read version from ZIP file (before flashing)
+    VERSION=""
+    # Try to extract temporarily to read version
+    TEMP_EXTRACT="/data/local/tmp/${NAME}_temp"
+    mkdir -p "$TEMP_EXTRACT"
+    if busybox unzip -q -o "$ZIP_FILE" -d "$TEMP_EXTRACT" 2>/dev/null; then
+        if [ -f "$TEMP_EXTRACT/module.prop" ]; then
+            VERSION=$(grep '^version=' "$TEMP_EXTRACT/module.prop" | cut -d'=' -f2 | tr -d '\r' | sed 's/^v//')
         fi
-        
-        # Fallback to tag name if version not found
-        if [ -z "$VERSION" ] && [ -n "$TAG_NAME" ]; then
-            VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
-        elif [ -z "$VERSION" ]; then
-            VERSION="installed"
-        fi
+        rm -rf "$TEMP_EXTRACT"
+    fi
 
-        # Update state
+    # Fallback to tag name if version not found
+    if [ -z "$VERSION" ] && [ -n "$TAG_NAME" ]; then
+        VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
+    elif [ -z "$VERSION" ]; then
+        VERSION="installed"
+    fi
+
+    # Now install/flash the module directly through root manager
+    echo "Flashing $NAME through root manager..."
+
+    FLASH_SUCCESS=false
+
+    # Try KernelSU first
+    if command -v ksud >/dev/null 2>&1; then
+        echo "Using KernelSU to flash $NAME"
+        if ksud module install "$ZIP_FILE"; then
+            echo "KernelSU flashing successful for $NAME"
+            FLASH_SUCCESS=true
+        fi
+    fi
+
+    # Try Magisk/APatch if KernelSU failed or not available
+    if [ "$FLASH_SUCCESS" = false ] && command -v magisk >/dev/null 2>&1; then
+        echo "Using Magisk/APatch to flash $NAME"
+        if magisk --install-module "$ZIP_FILE" 2>/dev/null; then
+            echo "Magisk/APatch flashing successful for $NAME"
+            FLASH_SUCCESS=true
+        fi
+    fi
+
+    # Try APatch if Magisk failed
+    if [ "$FLASH_SUCCESS" = false ] && command -v apd >/dev/null 2>&1; then
+        echo "Using APatch to flash $NAME"
+        if apd module install "$ZIP_FILE" 2>/dev/null; then
+            echo "APatch flashing successful for $NAME"
+            FLASH_SUCCESS=true
+        fi
+    fi
+
+    # Clean up the ZIP file
+    rm -f "$ZIP_FILE"
+
+    if [ "$FLASH_SUCCESS" = true ]; then
+        # Update state after successful flashing
         STATE_FILE="/data/adb/IntegrityHelper/state.json"
         if [ -n "$VERSION" ]; then
             # Create or update state file
@@ -101,11 +125,19 @@ download_and_install() {
             fi
         fi
 
-        # Clean up
-        rm -f "$ZIP_FILE"
-
-        echo "Installed $NAME successfully"
+        echo "Successfully flashed $NAME (version: $VERSION)"
+        echo "✅ Module has been flashed and is ready to use - reboot may be required for changes to take effect"
     else
-        echo "Error: Installation failed for $NAME"
+        echo "❌ Flashing failed for $NAME"
+        echo "⚠️  Could not flash $NAME through root manager"
     fi
 }
+
+# List of modules to install (name and repo pairs)
+download_and_install "PlayIntegrityFork" "https://github.com/osm0sis/PlayIntegrityFork"
+download_and_install "TrickyStore" "https://github.com/5ec1cff/TrickyStore"
+download_and_install "PlayStoreSelfUpdateBlocker" "https://github.com/himanshujjp/PlayStoreSelfUpdateBlocker"
+download_and_install "yurikey" "https://github.com/YurikeyDev/yurikey"
+download_and_install "ZygiskNext" "https://github.com/Dr-TSNG/ZygiskNext"
+
+echo "All installations completed"
